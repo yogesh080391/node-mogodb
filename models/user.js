@@ -1,5 +1,6 @@
 const connectToDatabase = require('../lib/db');
 const {ObjectId } = require('mongodb');
+const bcrypt = require('bcrypt');
 
 // Connect to the database and store the reference to userCollection
 let userCollection;
@@ -40,10 +41,23 @@ async function deleteUserByID(id){
   const result = await userCollection.deleteOne({ _id: new ObjectId(id) });
   return result;
 }
+
+async function login(data){
+  const user = await userCollection.findOne({ email: data.email });
+  if (user == null) {
+    return {status:false,error:"email is not exist"};
+  }
+  const isPasswordValid = await bcrypt.compare(String(data.password), String(user.password));
+  if (!isPasswordValid) {
+    return {status:false,error:"password is not matched"};
+  }
+  return {status:true,data:user}
+}
 module.exports = {
   insertUser,
   getUsers,
   getUserByID,
   updateUserByID,
-  deleteUserByID
+  deleteUserByID,
+  login
 };
